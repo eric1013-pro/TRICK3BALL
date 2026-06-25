@@ -1,0 +1,813 @@
+html_content = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>TRICK BALL made by THRE3RIC</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #030811; touch-action: none; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; -webkit-user-select: none; user-select: none; overscroll-behavior: none; }
+        
+        /* 🕶️ 자비스 스타일 하이테크 HUD 인트로 (아이언맨 무드) */
+        #introScreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #07152c 0%, #030811 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            color: #4fe3ff; z-index: 10; transition: opacity 0.8s ease-out; backdrop-filter: blur(8px);
+        }
+        .title-container { text-align: center; border: 1px solid rgba(79, 227, 255, 0.2); padding: 40px 60px; background: rgba(79, 227, 255, 0.02); box-shadow: 0 0 30px rgba(79, 227, 255, 0.05); position: relative; margin-bottom: 5px; }
+        .title-container::before { content: ''; position: absolute; top:0; left:0; width:15px; height:15px; border-top:2px solid #4fe3ff; border-left:2px solid #4fe3ff; }
+        .title-container::after { content: ''; position: absolute; bottom:0; right:0; width:15px; height:15px; border-bottom:2px solid #4fe3ff; border-right:2px solid #4fe3ff; }
+        h1 { font-size: 3.5rem; font-weight: 300; margin: 0; letter-spacing: 12px; text-transform: uppercase; color: #4fe3ff; text-shadow: 0 0 10px rgba(79, 227, 255, 0.5); }
+        .subtitle { font-size: 0.9rem; color: #7cbac6; margin-top: 10px; letter-spacing: 6px; text-transform: uppercase; opacity: 0.8; }
+        p.author { font-size: 0.8rem; color: #a1ccd4; margin-top: 5px; margin-bottom: 40px; letter-spacing: 3px; font-weight: bold; }
+        
+        button {
+            padding: 15px 50px; font-size: 1.1rem; font-weight: 400; border: 1px solid #4fe3ff;
+            background: rgba(79, 227, 255, 0.08); color: #4fe3ff; cursor: pointer;
+            box-shadow: 0 0 15px rgba(79, 227, 255, 0.1); transition: all 0.3s ease; letter-spacing: 4px; text-transform: uppercase;
+        }
+        button:hover { background: rgba(79, 227, 255, 0.25); box-shadow: 0 0 25px rgba(79, 227, 255, 0.4); transform: translateY(-2px); }
+        button:active { transform: scale(0.98); }
+
+        /* 📊 글래스모피즘 메탈릭 하이테크 UI */
+        .glass {
+            background: rgba(5, 16, 35, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(79, 227, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        #clearScreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: #fff; z-index: 9;
+            display: none; opacity: 0; transition: opacity 0.8s ease; 
+        }
+        #clearScreen h2 { font-size: 3.5rem; color: #4fe3ff; margin: 0; letter-spacing: 6px; text-shadow: 0 0 15px rgba(79, 227, 255, 0.6); font-weight: 300; }
+        #clearScreen p { font-size: 1.2rem; color: #a1ccd4; margin-top: 15px; letter-spacing: 1px;}
+
+        /* 📊 가로형 슬림 아크 리액터 스타일 진행도 바 */
+        #progressContainer {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 50%; height: 14px; z-index: 6; border-radius: 2px; overflow: hidden; display: none;
+            background: rgba(5, 16, 35, 0.8); border: 1px solid rgba(79, 227, 255, 0.3);
+        }
+        #progressBar {
+            height: 100%; width: 0%; background: #4fe3ff;
+            transition: width 0.1s linear; box-shadow: 0 0 12px #4fe3ff;
+        }
+        #progressText {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #ffffff; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; text-shadow: 1px 1px 2px #000;
+        }
+
+        #gameUI { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; display: none; pointer-events: none; }
+        .zone-guide { position: absolute; top: 0; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(79,227,255,0.02); font-weight: 300; font-size: 1.5rem; letter-spacing: 8px; pointer-events: auto; }
+        #leftZone { left: 0; width: 50%; border-right: 1px solid rgba(79, 227, 255, 0.05); }
+        #rightZone { right: 0; width: 50%; }
+
+        #joystickContainer {
+            position: absolute; width: 110px; height: 110px;
+            border-radius: 50%; display: none; justify-content: center; align-items: center; 
+            pointer-events: none; transform: translate(-50%, -50%); z-index: 6;
+            background: rgba(79, 227, 255, 0.02); border: 1px solid rgba(79, 227, 255, 0.2);
+        }
+        #joystickHandle { width: 44px; height: 44px; background: rgba(79, 227, 255, 0.8); border-radius: 50%; box-shadow: 0 0 15px #4fe3ff; pointer-events: none; }
+
+        #instructions { 
+            position: absolute; top: 60px; left: 20px; color: #7cbac6; font-weight: 400; z-index: 6; 
+            padding: 10px 15px; border-radius: 2px; border-left: 3px solid #4fe3ff; 
+            pointer-events: none; font-size: 0.8rem; letter-spacing: 1px;
+        }
+        #cpAlert { 
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%); color: #4fe3ff; 
+            font-weight: bold; z-index: 6; padding: 10px 25px; border-radius: 2px; 
+            pointer-events: none; font-size: 1rem; opacity: 0; transition: opacity 0.3s; text-shadow: 0 0 8px #4fe3ff; text-transform: uppercase;
+            border: 1px solid rgba(79, 227, 255, 0.4);
+        }
+        #speedLines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 60%, rgba(79,227,255,0.08) 100%); opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 4; }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+
+    <div id="introScreen">
+        <div class="title-container">
+            <h1>TRICK BALL</h1>
+            <div class="subtitle">STARK CORE SYSTEM v5.0</div>
+        </div>
+        <p class="author">made by THRE3RIC</p>
+        <button onclick="startGame()">INITIALIZE CORE</button>
+    </div>
+
+    <div id="clearScreen" class="glass">
+        <h2>CORE OVERRIDE COMPLETE</h2>
+        <p>모든 입체 트랙 구조물 분석 및 돌파 완료</p>
+        <button onclick="location.reload()" style="margin-top:40px; border-radius:0;">REBOOT PROTOCOL</button>
+    </div>
+
+    <div id="progressContainer">
+        <div id="progressBar"></div>
+        <span id="progressText">0%</span>
+    </div>
+
+    <div id="instructions" class="glass">
+        [PC] 이동: WASD / 시선: 마우스 드래그<br>
+        [모바일] 이동: 좌측 드래그 / 시선: 우측 드래그
+    </div>
+    
+    <div id="cpAlert" class="glass">GRID ALIGNED</div>
+    <div id="speedLines"></div>
+
+    <div id="joystickContainer" class="glass" style="border-radius: 50%;"><div id="joystickHandle"></div></div>
+
+    <div id="gameUI">
+        <div id="leftZone" class="zone-guide"><span>INPUT.MOVE</span></div>
+        <div id="rightZone" class="zone-guide"><span>INPUT.CAM</span></div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, clock;
+        let world, ballBody, ballMesh;
+        let isGameStarted = false, isCleared = false;
+
+        let camRadius = 16;
+        let camTheta = Math.PI; 
+        let camPhi = Math.PI / 3.3; 
+        let targetFov = 60; 
+        
+        let moveForce = { x: 0, y: 0 };
+        let keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false };
+        let leftPointerId = null, leftStartPos = { x: 0, y: 0 };
+        let rightPointerId = null, rightLastPos = { x: 0, y: 0 };
+
+        // ★ 최종 목적지는 확장 맵의 끝으로 지정
+        let goalPosition = new THREE.Vector3(-140, 0, 100); 
+        let checkPoint = new THREE.Vector3(0, 4, 0); 
+        
+        let fireworks = [], jumpPads = [], windZones = [], fans = [], checkpointMarkers = []; 
+        let boostPads = [], laserTraps = [], slidingPillars = [];
+        let waypoints = [], totalTrackLength = 0, currentProgressPercent = 0, maxProgressAchieved = 0;
+
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickHandle = document.getElementById('joystickHandle');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const speedLines = document.getElementById('speedLines');
+
+        init();
+        animate();
+
+        function init() {
+            clock = new THREE.Clock(); 
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x030811); 
+            scene.fog = new THREE.FogExp2(0x030811, 0.003); 
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 4000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0x556677, 0.7));
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(150, 300, 100);
+            mainLight.castShadow = true;
+            mainLight.shadow.camera.left = -300; mainLight.shadow.camera.right = 300;
+            mainLight.shadow.camera.top = 300; mainLight.shadow.camera.bottom = -300;
+            scene.add(mainLight);
+
+            const fillLight = new THREE.DirectionalLight(0x4fe3ff, 0.4); 
+            fillLight.position.set(-100, 100, -100);
+            scene.add(fillLight);
+
+            world = new CANNON.World();
+            world.gravity.set(0, -35, 0); 
+
+            createStarkLabBackground();
+
+            // 공 (메탈릭 다크 티타늄 실버 쉴드 구체)
+            const sphereGeo = new THREE.SphereGeometry(1.2, 32, 32);
+            const sphereMat = new THREE.MeshStandardMaterial({ color: 0x3a4454, roughness: 0.08, metalness: 0.95 });
+            ballMesh = new THREE.Mesh(sphereGeo, sphereMat);
+            ballMesh.castShadow = true;
+            scene.add(ballMesh);
+
+            const sphereShape = new CANNON.Sphere(1.2);
+            ballBody = new CANNON.Body({ mass: 6, shape: sphereShape });
+            ballBody.position.copy(checkPoint); 
+            ballBody.linearDamping = 0.25; 
+            ballBody.angularDamping = 0.25;
+            world.addBody(ballBody);
+
+            buildIntegratedStarkTrack();
+            setupPerfectInputSystems();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function addWaypoint(pos) {
+            if (waypoints.length > 0) {
+                let prev = waypoints[waypoints.length - 1];
+                totalTrackLength += prev.pos.distanceTo(pos);
+            }
+            waypoints.push({ pos: new THREE.Vector3().copy(pos), accumDist: totalTrackLength });
+        }
+
+        function createTrackSegment(p1, p2, width, color) {
+            const center = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+            const dist = p1.distanceTo(p2);
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 0.6, dist), new THREE.MeshStandardMaterial({color: color, roughness:0.15, metalness:0.85}));
+            mesh.position.copy(center); mesh.lookAt(p2); 
+            mesh.receiveShadow = true; mesh.castShadow = true;
+            scene.add(mesh);
+
+            const shape = new CANNON.Box(new CANNON.Vec3(width/2, 0.3, dist/2));
+            const body = new CANNON.Body({mass: 0});
+            body.addShape(shape);
+            body.position.copy(center);
+            body.quaternion.copy(mesh.quaternion);
+            world.addBody(body);
+        }
+
+        function createBlock(x, y, z, w, h, d, color) {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.8 }));
+            mesh.position.set(x, y, z); mesh.receiveShadow = true; mesh.castShadow = true; scene.add(mesh);
+            const body = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(w/2, h/2, d/2)) });
+            body.position.set(x, y, z); world.addBody(body);
+        }
+
+        function createSmoothCurveTrack(pointsArray, width, color) {
+            const curve = new THREE.CatmullRomCurve3(pointsArray);
+            const segments = Math.floor(curve.getLength() / 3); 
+            const pts = curve.getPoints(segments);
+            for(let i=0; i<pts.length-1; i++){
+                addWaypoint(pts[i]);
+                createTrackSegment(pts[i], pts[i+1], width, color);
+                createBlock(pts[i+1].x, pts[i+1].y, pts[i+1].z, width, 0.6, width, color); 
+            }
+            addWaypoint(pts[pts.length-1]);
+        }
+
+        // --- 스타크 테마 기믹 요소 ---
+
+        function createBoostPad(x, y, z, power) {
+            createBlock(x, y-0.2, z, 5, 0.6, 6, 0x152238);
+            const pad = new THREE.Mesh(new THREE.BoxGeometry(4, 0.75, 5), new THREE.MeshStandardMaterial({color: 0x4fe3ff, roughness: 0.1, metalness: 0.9}));
+            pad.position.set(x, y, z); scene.add(pad);
+            boostPads.push({x, y, z, force: power}); 
+        }
+
+        function createLaserTrap(x, y, z, speed, length=24) {
+            const pivot = new THREE.Object3D();
+            pivot.position.set(x, y, z);
+            
+            const core = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 3, 16), new THREE.MeshStandardMaterial({color: 0x222d3d, metalness: 0.9}));
+            pivot.add(core);
+
+            const laser = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, length, 16), new THREE.MeshBasicMaterial({color: 0x4fe3ff, transparent: true, opacity: 0.9}));
+            laser.rotation.z = Math.PI / 2;
+            pivot.add(laser);
+            
+            scene.add(pivot);
+            laserTraps.push({pivot: pivot, x: x, y: y, z: z, length: length/2, speed: speed});
+        }
+
+        function createSlidingPillar(x, y, z, moveRange, speed) {
+            const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 7, 16), new THREE.MeshStandardMaterial({color: 0x5a697f, roughness: 0.1, metalness: 0.9}));
+            scene.add(pillar);
+            slidingPillars.push({mesh: pillar, startX: x, y: y, z: z, range: moveRange, speed: speed, time: Math.random() * 50});
+        }
+
+        function createWindZone(x, y, z, height) {
+            createBlock(x, y-0.5, z, 8, 1, 8, 0x1a2433);
+            const blade = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.2, 1.2), new THREE.MeshStandardMaterial({color: 0x4fe3ff, metalness: 0.9}));
+            blade.position.set(x, y+0.1, z); scene.add(blade); fans.push(blade);
+
+            const wind = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, height, 32), new THREE.MeshBasicMaterial({color: 0x4fe3ff, transparent: true, opacity: 0.08, side: THREE.DoubleSide, wireframe: true}));
+            wind.position.set(x, y + (height/2), z); scene.add(wind);
+            windZones.push({x: x, y: y, z: z, radius: 5.0, height: height, force: 400});
+        }
+
+        function createCheckpointMarker(x, y, z) {
+            createBlock(x, y-0.5, z, 13, 1, 13, 0x152238);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.25, 16, 32), new THREE.MeshStandardMaterial({color: 0x4fe3ff, roughness:0.1, metalness:0.9}));
+            ring.position.set(x, y + 0.6, z); ring.rotation.x = Math.PI / 2; scene.add(ring);
+            checkpointMarkers.push({x: x, y: y, z: z, mesh: ring, triggered: false});
+        }
+
+        function createStarkTunnel(startX, y, startZ, length) {
+            const endZ = startZ + length;
+            addWaypoint(new THREE.Vector3(startX, y, startZ));
+            
+            createBlock(startX, y, startZ + length/2, 16, 1, length, 0x1a2433);
+
+            const frameGeo = new THREE.BoxGeometry(16, 12, 0.6);
+            const frameMat = new THREE.MeshStandardMaterial({color: 0x2e3d52, roughness: 0.2, metalness: 0.8, wireframe: false});
+            
+            for(let z = startZ; z <= endZ; z += 20) {
+                let frame = new THREE.Mesh(frameGeo, frameMat);
+                frame.position.set(startX, y + 6, z);
+                scene.add(frame);
+                
+                createBlock(startX - 8.5, y + 6, z, 1, 12, 20, 0x000000);
+                createBlock(startX + 8.5, y + 6, z, 1, 12, 20, 0x000000);
+            }
+            addWaypoint(new THREE.Vector3(startX, y, endZ));
+        }
+
+        // 🛣️ 트랙 빌드 (기존 맵 유지 + 난이도 곡선형 메가 확장)
+        function buildIntegratedStarkTrack() {
+            const metallicColor = 0x222d3d; 
+
+            // --- [구간 1] 초반부 (비교적 쉬움, 넓은 트랙) ---
+            createBlock(0, -1, 0, 10, 2, 10, metallicColor);
+            addWaypoint(new THREE.Vector3(0, -1, 0));
+
+            // 오버패스 입체 교차 트랙
+            let p1 = [
+                new THREE.Vector3(0, -1, -5),   
+                new THREE.Vector3(0, -1, -30),  
+                new THREE.Vector3(40, -1, -30), 
+                new THREE.Vector3(60, 10, -30), 
+                new THREE.Vector3(60, 10, 0),   
+                new THREE.Vector3(0, 10, 0),    // 시작점 위를 지남
+                new THREE.Vector3(-40, 10, 0)   
+            ];
+            buildPath(p1, 4.5, metallicColor);
+            createCheckpointMarker(-40, 10, 0);
+
+            // 하이 런치 점프 (수평 불가능 구간을 점프패드로 연결)
+            createBlock(-40, 9.5, 5, 5, 0.6, 5, 0x152238);
+            const gp = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.7, 3.5), new THREE.MeshStandardMaterial({color: 0x4fe3ff}));
+            gp.position.set(-40, 10, 5); scene.add(gp);
+            jumpPads.push({x: -40, y: 10, z: 5, radius: 2.8, jumpForce: 42});
+            addWaypoint(new THREE.Vector3(-40, 25, 20));
+
+            // 튜브 레일 레이아웃
+            createBlock(-40, 28, 40, 12, 1, 12, metallicColor);
+            let p2 = [
+                new THREE.Vector3(-40, 28, 40),
+                new THREE.Vector3(-10, 28, 40), 
+                new THREE.Vector3(-10, 28, 80)
+            ];
+            buildPath(p2, 1.8, 0x4fe3ff); 
+            createCheckpointMarker(-10, 28, 85);
+
+            // 지그재그 벨리
+            let p3 = [
+                new THREE.Vector3(-10, 28, 90),
+                new THREE.Vector3(20, 28, 90),
+                new THREE.Vector3(20, 28, 60),
+                new THREE.Vector3(50, 28, 60)
+            ];
+            buildPath(p3, 2.5, metallicColor);
+            
+            // 공중 수직 기류 리프트
+            createWindZone(50, -5, 60, 48); 
+            addWaypoint(new THREE.Vector3(50, 15, 60));
+            addWaypoint(new THREE.Vector3(50, 40, 60));
+
+            createBlock(50, 38, 80, 14, 1, 14, metallicColor); 
+            createCheckpointMarker(50, 38, 80);
+
+            // 나선형 다운 슬라이더
+            let p4 = [new THREE.Vector3(50, 38, 80)];
+            for(let i=1; i<=35; i++) {
+                let t = i/35;
+                let px = 50 + Math.sin(t * Math.PI * 3.5) * 25; 
+                let py = 38 - (t * 58); 
+                let pz = 80 + (t * 70); 
+                p4.push(new THREE.Vector3(px, py, pz));
+            }
+            buildPath(p4, 4.5, metallicColor);
+            createCheckpointMarker(50, -20, 150);
+
+            // 직선 봅슬레이 슬라이드
+            let p5 = [
+                new THREE.Vector3(50, -20, 155),
+                new THREE.Vector3(0, -30, 200),
+                new THREE.Vector3(0, -30, 260)
+            ];
+            buildPath(p5, 5, metallicColor);
+            createCheckpointMarker(0, -30, 265);
+
+            // --- [구간 2] 중반부 터널 & 장애물 (점점 어려워짐) ---
+            createTrackSegment(new THREE.Vector3(0, -30, 266), new THREE.Vector3(0, -30, 275), 6, metallicColor);
+            createStarkTunnel(0, -30, 275, 200); 
+            
+            // 터널 내부 방해물
+            createBoostPad(0, -29.5, 295, 180);
+            createSlidingPillar(0, -26, 335, 5.5, 0.05); 
+            createBoostPad(0, -29.5, 375, 180);
+            createSlidingPillar(0, -26, 425, -5.5, 0.06);
+
+            createCheckpointMarker(0, -30, 485);
+
+            // 플라즈마 레이저 필드
+            createBlock(0, -30, 565, 26, 1, 150, 0x111622); 
+            addWaypoint(new THREE.Vector3(0, -30, 490));
+            addWaypoint(new THREE.Vector3(0, -30, 640));
+
+            createLaserTrap(0, -28.5, 515, 0.035, 26);
+            createSlidingPillar(-6, -26, 545, 4, 0.04);
+            createSlidingPillar(6, -26, 545, -4, 0.04);
+            createLaserTrap(-8, -28.5, 580, -0.045, 16);
+            createLaserTrap(8, -28.5, 580, 0.045, 16);
+            createSlidingPillar(0, -26, 615, 10, 0.05);
+
+            createCheckpointMarker(0, -30, 650);
+
+            // --- [구간 3] ★ 신규 연장 구간: 고난이도 3D 입체 코스 ---
+            
+            // 3-1. 90도 회전 및 공중 승강기 (수평 단절을 바람으로 연결)
+            let p6 = [
+                new THREE.Vector3(0, -30, 655),
+                new THREE.Vector3(0, -30, 680),
+                new THREE.Vector3(40, -30, 680),
+                new THREE.Vector3(80, -30, 680)
+            ];
+            buildPath(p6, 4, metallicColor);
+            
+            // 거대 윈드존을 통한 상층부 진입 (어려운 점프 대신 바람으로 매끄럽게 연결)
+            createWindZone(80, -30.5, 680, 75); // 엄청난 높이로 상승시킴 Y: -30 -> Y: 40
+            addWaypoint(new THREE.Vector3(80, 0, 680));
+            addWaypoint(new THREE.Vector3(80, 40, 680));
+            
+            // 3-2. 기존 맵 위를 가로지르는 아찔한 고공 외나무다리 (Overpass 2)
+            createBlock(80, 38, 680, 14, 1, 14, metallicColor); // 상층부 착지 베이스
+            createCheckpointMarker(80, 38, 680);
+
+            // 얇은 레일로 레이저 필드 위를 역주행하듯 지나감
+            let p7 = [
+                new THREE.Vector3(80, 38, 675),
+                new THREE.Vector3(80, 38, 620), // 레이저 필드 바로 위 고도
+                new THREE.Vector3(80, 38, 400)  // 터널 근처까지 뒤로 감
+            ];
+            buildPath(p7, 1.5, 0x4fe3ff); // 폭 1.5의 초고난이도 얇은 외나무 다리
+
+            createCheckpointMarker(80, 38, 395);
+
+            // 3-3. 공중 레이저 지그재그 회피
+            let p8 = [
+                new THREE.Vector3(80, 38, 390),
+                new THREE.Vector3(80, 38, 330),
+                new THREE.Vector3(-40, 38, 330), // 왼쪽으로 횡단
+                new THREE.Vector3(-40, 38, 250)
+            ];
+            buildPath(p8, 2.5, metallicColor);
+            
+            // 지그재그 레일 위를 도는 레이저 장애물
+            createLaserTrap(20, 39.5, 330, 0.04, 16); 
+            createLaserTrap(-40, 39.5, 290, -0.05, 16);
+            
+            createCheckpointMarker(-40, 38, 245);
+
+            // 3-4. 최종 수직 메가 드롭 & 코너 (Z를 다시 앞으로 전진)
+            let finalDrop = [];
+            for(let i=0; i<=30; i++) {
+                let t = i/30;
+                let px = -40 - (t * 60);       // -40 -> -100
+                let py = 38 - (t * 40);        // 38 -> -2
+                let pz = 240 - (t * 140);      // 240 -> 100 으로 전진
+                finalDrop.push(new THREE.Vector3(px, py, pz));
+            }
+            buildPath(finalDrop, 4, metallicColor);
+            
+            // 🏁 확장된 최종 목표 지점
+            createBlock(-100, -2, 95, 20, 1, 20, metallicColor);
+            createTrackSegment(new THREE.Vector3(-100, -2, 90), new THREE.Vector3(-140, 0, 100), 5, metallicColor);
+            
+            createBlock(-140, 0, 100, 26, 2, 26, 0x152238);
+            createGoalFlag(goalPosition.x, goalPosition.y, goalPosition.z);
+            addWaypoint(goalPosition);
+        }
+
+        // 아이언맨 토니스타크 가상 연구소 데이터 룸 홀로그램 입자 시각화 배경
+        function createStarkLabBackground() {
+            const grid = new THREE.GridHelper(3000, 120, 0x4fe3ff, 0x0c1a30);
+            grid.position.y = -70;
+            grid.material.opacity = 0.25;
+            grid.material.transparent = true;
+            scene.add(grid);
+
+            const partsGeo = new THREE.BufferGeometry();
+            const partsPos = [];
+            for(let i=0; i<1500; i++) {
+                partsPos.push((Math.random()-0.5)*1200, (Math.random()-0.5)*800, (Math.random()-0.5)*1500 + 300);
+            }
+            partsGeo.setAttribute('position', new THREE.Float32BufferAttribute(partsPos, 3));
+            const pMat = new THREE.PointsMaterial({color: 0x4fe3ff, size: 1.2, transparent: true, opacity: 0.3});
+            scene.add(new THREE.Points(partsGeo, pMat));
+        }
+
+        function createGoalFlag(x, y, z) {
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 8, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness:0.9 }));
+            pole.position.set(x, y + 4, z); pole.castShadow = true; scene.add(pole);
+            
+            const coreGeo = new THREE.TorusGeometry(1.5, 0.3, 16, 32);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0x4fe3ff, wireframe: true });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            core.position.set(x, y + 8, z);
+            scene.add(core);
+        }
+
+        function setupPerfectInputSystems() {
+            window.addEventListener('keydown', e => { if (keys[e.key] !== undefined) keys[e.key] = true; });
+            window.addEventListener('keyup', e => { if (keys[e.key] !== undefined) keys[e.key] = false; });
+
+            const leftZone = document.getElementById('leftZone');
+            const rightZone = document.getElementById('rightZone');
+
+            leftZone.addEventListener('pointerdown', e => {
+                e.stopPropagation(); e.preventDefault();
+                if (leftPointerId !== null) return;
+                leftPointerId = e.pointerId; leftStartPos = { x: e.clientX, y: e.clientY };
+                joystickContainer.style.left = `${e.clientX}px`; joystickContainer.style.top = `${e.clientY}px`;
+                joystickContainer.style.display = 'flex';
+            });
+            
+            leftZone.addEventListener('pointermove', e => {
+                e.preventDefault();
+                if (leftPointerId === e.pointerId) {
+                    const dragX = e.clientX - leftStartPos.x, dragY = e.clientY - leftStartPos.y;
+                    const dist = Math.sqrt(dragX * dragX + dragY * dragY);
+                    const maxLimit = 50; 
+                    let cx = dist > maxLimit ? (dragX / dist) * maxLimit : dragX;
+                    let cy = dist > maxLimit ? (dragY / dist) * maxLimit : dragY;
+
+                    joystickHandle.style.transform = `translate(${cx}px, ${cy}px)`;
+                    moveForce.x = cx / maxLimit; moveForce.y = cy / maxLimit;
+                }
+            });
+
+            const resetLeftJoystick = e => {
+                if (leftPointerId === e.pointerId) {
+                    leftPointerId = null; moveForce = { x: 0, y: 0 };
+                    joystickContainer.style.display = 'none'; joystickHandle.style.transform = `translate(0px, 0px)`;
+                }
+            };
+            leftZone.addEventListener('pointerup', resetLeftJoystick); leftZone.addEventListener('pointercancel', resetLeftJoystick);
+
+            rightZone.addEventListener('pointerdown', e => {
+                e.stopPropagation(); e.preventDefault();
+                if (rightPointerId !== null) return;
+                rightPointerId = e.pointerId; rightLastPos = { x: e.clientX, y: e.clientY };
+            });
+            
+            rightZone.addEventListener('pointermove', e => {
+                e.preventDefault();
+                if (rightPointerId === e.pointerId) {
+                    camTheta -= (e.clientX - rightLastPos.x) * 0.007; 
+                    camPhi -= (e.clientY - rightLastPos.y) * 0.007;
+                    camPhi = Math.max(0.1, Math.min(Math.PI / 2.3, camPhi)); 
+                    rightLastPos = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            const resetRightCamera = e => { if (rightPointerId === e.pointerId) rightPointerId = null; };
+            rightZone.addEventListener('pointerup', resetRightCamera); rightZone.addEventListener('pointercancel', resetRightCamera);
+
+            window.addEventListener('mousedown', e => {
+                if (!isGameStarted || e.clientX < window.innerWidth / 2) return;
+                if (rightPointerId === null) rightLastPos = { x: e.clientX, y: e.clientY };
+            });
+        }
+
+        function startGame() {
+            const intro = document.getElementById('introScreen');
+            intro.style.opacity = '0';
+            setTimeout(() => {
+                intro.style.display = 'none';
+                document.getElementById('gameUI').style.display = 'block';
+                document.getElementById('progressContainer').style.display = 'block';
+                isGameStarted = true;
+            }, 800);
+        }
+
+        function showCheckpointAlert() {
+            const alert = document.getElementById('cpAlert');
+            alert.style.opacity = '1'; setTimeout(() => { alert.style.opacity = '0'; }, 2000);
+        }
+
+        function spawnFirework() {
+            const particleCount = 60;
+            const geometry = new THREE.BufferGeometry();
+            const positions = [], velocities = [], colors = [];
+            const colorHex = new THREE.Color(0x4fe3ff); 
+
+            const sX = goalPosition.x + (Math.random() * 10 - 5), sY = goalPosition.y + 6 + (Math.random() * 6), sZ = goalPosition.z + (Math.random() * 10 - 5);
+
+            for (let i = 0; i < particleCount; i++) {
+                positions.push(sX, sY, sZ);
+                const theta = Math.random() * Math.PI * 2, phi = Math.acos((Math.random() * 2) - 1), velocityPower = 0.15 + Math.random() * 0.2;
+                velocities.push(velocityPower * Math.sin(phi) * Math.sin(theta), velocityPower * Math.cos(phi) + 0.08, velocityPower * Math.sin(phi) * Math.cos(theta));
+                colors.push(colorHex.r, colorHex.g, colorHex.b);
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            const pSystem = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.4, vertexColors: true, transparent: true, opacity: 1 }));
+            scene.add(pSystem); fireworks.push({ system: pSystem, velocities: velocities, age: 0, maxAge: 80 });
+        }
+
+        function updateFireworks() {
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                const f = fireworks[i]; f.age++;
+                const posArr = f.system.geometry.attributes.position.array;
+                for (let j = 0; j < posArr.length; j += 3) {
+                    posArr[j] += f.velocities[j]; posArr[j+1] += f.velocities[j+1]; posArr[j+2] += f.velocities[j+2];
+                    f.velocities[j+1] -= 0.004; 
+                }
+                f.system.geometry.attributes.position.needsUpdate = true;
+                f.system.material.opacity = 1 - (f.age / f.maxAge);
+                if (f.age >= f.maxAge) { scene.remove(f.system); fireworks.splice(i, 1); }
+            }
+        }
+
+        function updateProgressBar() {
+            if(!isGameStarted || waypoints.length === 0) return;
+            let minDistance = Infinity;
+            let closestAccum = 0;
+
+            for(let i=0; i<waypoints.length-1; i++) {
+                let p1 = waypoints[i].pos, p2 = waypoints[i+1].pos;
+                let line = new THREE.Vector3().subVectors(p2, p1);
+                let len = line.length(); line.normalize();
+                
+                let v = new THREE.Vector3().subVectors(ballBody.position, p1);
+                let d = v.dot(line);
+                d = Math.max(0, Math.min(len, d)); 
+                
+                let closestPoint = new THREE.Vector3().copy(p1).add(line.clone().multiplyScalar(d));
+                let distToSegment = ballBody.position.distanceTo(closestPoint);
+
+                if(distToSegment < 45) { 
+                    let currentAccum = waypoints[i].accumDist + d;
+                    if(distToSegment < minDistance) {
+                        minDistance = distToSegment;
+                        closestAccum = currentAccum;
+                    }
+                }
+            }
+
+            let percent = (closestAccum / totalTrackLength) * 100;
+            // 최고 기록 갱신 로직
+            if (percent > maxProgressAchieved && (percent - maxProgressAchieved) < 20) { maxProgressAchieved = percent; }
+
+            // ★ 요청사항 반영: 현재 보여주는 프로그레스 바는 죽었을 때 깎이는 대신, 
+            // 현재 살아있는 동안의 위치를 기반으로 하되, 체크포인트에서 부활하면 해당 체크포인트 퍼센트로 자연스럽게 조절됨.
+            currentProgressPercent = percent;
+            
+            if (isCleared) currentProgressPercent = 100;
+
+            let finalPercent = Math.min(100, Math.max(0, currentProgressPercent));
+            progressBar.style.width = finalPercent + '%';
+            progressText.innerText = Math.floor(finalPercent) + '%';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const deltaTime = Math.min(clock.getDelta(), 0.1); 
+            world.step(1 / 60, deltaTime, 3);
+
+            laserTraps.forEach(trap => {
+                trap.pivot.rotation.y += trap.speed;
+                const laserDir = new THREE.Vector3(1, 0, 0).applyQuaternion(trap.pivot.quaternion).normalize();
+                const toBall = new THREE.Vector3().subVectors(ballBody.position, new THREE.Vector3(trap.x, trap.y, trap.z));
+                const distAlongLaser = toBall.dot(laserDir);
+                
+                if(distAlongLaser > 0 && distAlongLaser < trap.length) {
+                    const closestPt = new THREE.Vector3(trap.x, trap.y, trap.z).add(laserDir.multiplyScalar(distAlongLaser));
+                    if(ballBody.position.distanceTo(closestPt) < 1.8) {
+                        const knockback = new THREE.Vector3().subVectors(ballBody.position, closestPt).normalize().multiplyScalar(55);
+                        ballBody.velocity.x = knockback.x; ballBody.velocity.z = knockback.z;
+                    }
+                }
+            });
+
+            slidingPillars.forEach(pillar => {
+                pillar.time += pillar.speed;
+                const currentX = pillar.startX + Math.sin(pillar.time) * pillar.range;
+                pillar.mesh.position.set(currentX, pillar.y, pillar.z);
+                
+                const dist = Math.sqrt(Math.pow(ballBody.position.x - currentX, 2) + Math.pow(ballBody.position.z - pillar.z, 2));
+                if (dist < 2.5 && Math.abs(ballBody.position.y - pillar.y) < 4) {
+                    const knockbackX = (ballBody.position.x - currentX) > 0 ? 35 : -35;
+                    ballBody.velocity.x = knockbackX;
+                }
+            });
+
+            fans.forEach(blade => blade.rotation.y += 0.25);
+
+            if (!isGameStarted) {
+                camTheta += 0.002;
+            } else {
+                const forwardVec = new THREE.Vector3();
+                camera.getWorldDirection(forwardVec);
+                forwardVec.y = 0; forwardVec.normalize();
+                const rightVec = new THREE.Vector3(-forwardVec.z, 0, forwardVec.x).normalize();
+
+                let inputX = moveForce.x, inputY = moveForce.y;
+                if (keys.ArrowUp || keys.w) inputY = -1;
+                if (keys.ArrowDown || keys.s) inputY = 1;
+                if (keys.ArrowLeft || keys.a) inputX = -1;
+                if (keys.ArrowRight || keys.d) inputX = 1;
+
+                const accelerationPower = 75; 
+                const finalForceX = (rightVec.x * inputX + forwardVec.x * -inputY) * accelerationPower;
+                const finalForceZ = (rightVec.z * inputX + forwardVec.z * -inputY) * accelerationPower;
+                ballBody.applyForce(new CANNON.Vec3(finalForceX, 0, finalForceZ), ballBody.position);
+
+                let isBoosting = false;
+
+                boostPads.forEach(pad => {
+                    if (Math.abs(ballBody.position.x - pad.x) < 3.5 && Math.abs(ballBody.position.z - pad.z) < 3.5 && Math.abs(ballBody.position.y - pad.y) < 2) {
+                        ballBody.applyForce(new CANNON.Vec3(0, 0, pad.force), ballBody.position);
+                        isBoosting = true;
+                    }
+                });
+
+                if (isBoosting) { targetFov = 100; speedLines.style.opacity = '1'; } 
+                else { targetFov = 60; speedLines.style.opacity = '0'; }
+                camera.fov += (targetFov - camera.fov) * 0.1;
+                camera.updateProjectionMatrix();
+
+                const speed = Math.sqrt(ballBody.velocity.x ** 2 + ballBody.velocity.z ** 2);
+                const maxSpeed = isBoosting ? 85 : 45; 
+                if (speed > maxSpeed) {
+                    const ratio = maxSpeed / speed;
+                    ballBody.velocity.x *= ratio; ballBody.velocity.z *= ratio;
+                }
+
+                jumpPads.forEach(pad => {
+                    if (Math.abs(ballBody.position.x - pad.x) < pad.radius && Math.abs(ballBody.position.z - pad.z) < pad.radius && Math.abs(ballBody.position.y - pad.y) < 1.5) {
+                        ballBody.velocity.y = pad.jumpForce;
+                    }
+                });
+
+                windZones.forEach(zone => {
+                    if (Math.abs(ballBody.position.x - zone.x) < zone.radius && Math.abs(ballBody.position.z - zone.z) < zone.radius &&
+                        ballBody.position.y >= zone.y && ballBody.position.y <= zone.y + zone.height) {
+                        ballBody.applyForce(new CANNON.Vec3(0, zone.force, 0), ballBody.position);
+                    }
+                });
+
+                checkpointMarkers.forEach(cp => {
+                    if (!cp.triggered && Math.abs(ballBody.position.z - cp.z) < 7 && Math.abs(ballBody.position.x - cp.x) < 7) {
+                        cp.triggered = true;
+                        cp.mesh.material.color.setHex(0x4fe3ff);
+                        checkPoint.set(cp.x, cp.y + 4, cp.z);
+                        showCheckpointAlert();
+                    }
+                });
+
+                // ★ [요청사항 복구] 죽었을 때 체크포인트 보존 로직 유지 (0% 완전 초기화 배제)
+                const deathFloor = checkPoint.y - 25;
+                if (ballBody.position.y < deathFloor) {
+                    ballBody.position.copy(checkPoint);
+                    ballBody.velocity.set(0, 0, 0); ballBody.angularVelocity.set(0, 0, 0);
+                    // 죽었을 때는 체크포인트를 초기화하지 않음으로써 진행상황을 보존함!
+                }
+
+                if (ballMesh.position.distanceTo(goalPosition) < 5.0 && !isCleared) {
+                    isCleared = true;
+                    document.getElementById('clearScreen').style.display = 'flex';
+                    setTimeout(() => { document.getElementById('clearScreen').style.opacity = '1'; }, 50);
+                }
+                if (isCleared && Math.random() < 0.2) spawnFirework();
+            }
+
+            ballMesh.position.copy(ballBody.position);
+            ballMesh.quaternion.copy(ballBody.quaternion);
+            
+            updateFireworks();
+            updateProgressBar();
+
+            const targetCamX = ballMesh.position.x + camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+            const targetCamY = ballMesh.position.y + camRadius * Math.cos(camPhi);
+            const targetCamZ = ballMesh.position.z + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+            
+            camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.15); 
+            camera.lookAt(ballMesh.position);
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
+"""
+
+file_path = "TRICK_BALL_IronMan_Extend.html"
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+print(f"File generated successfully: {file_path}")
